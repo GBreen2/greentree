@@ -7,8 +7,8 @@ from fastapi import FastAPI, Request
 import asyncio
 
 # YouTube API Key and Telegram Bot API Token as environment variables
-YOUTUBE_API_KEY = os.getenv('AIzaSyBLJlVmrVnTu4JYUwltLuqtji65EyxdP5s')
-TELEGRAM_BOT_TOKEN = os.getenv('7652906604:AAG4JGjSy0TTMkr0V0xlSxGMi7aQtJA_2io')
+YOUTUBE_API_KEY = 'AIzaSyBLJlVmrVnTu4JYUwltLuqtji65EyxdP5s'
+TELEGRAM_BOT_TOKEN = '7652906604:AAG4JGjSy0TTMkr0V0xlSxGMi7aQtJA_2io'
 
 # FastAPI instance for Vercel to handle HTTP requests
 app = FastAPI()
