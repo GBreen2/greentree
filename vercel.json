@@ -2,15 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.py",
+      "src": "greengame.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
       "src": "/webhook",
-      "dest": "/main.py"
+      "dest": "greengame.py"
     }
   ]
 }
