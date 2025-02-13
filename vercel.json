@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/greengame.py"
+      "dest": "/main.py"
     }
   ]
 }
