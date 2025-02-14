@@ -8,7 +8,7 @@
   ],
   "routes": [
     {
-      "src": "https://greentree-hole-ncpt4plsj-rokon-khs-projects.vercel.app/webhook",
+      "src": "/webhook",
       "dest": "app.py"
     },
     {
