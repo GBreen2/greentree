@@ -1,0 +1,10 @@
+/my-django-project
+    /greentree
+        manage.py
+        settings.py
+        urls.py
+        ...
+    /requirements.txt
+    /.github
+        /workflows
+            django-ci.yml  # এই ফাইলটি এখানে রাখুন
