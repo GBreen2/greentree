@@ -24,7 +24,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Change to correct directory and run tests
-      run: |
-        cd greentree  # 'greentree' হলো আপনার Django প্রকল্পের ফোল্ডারের নাম
-        python manage.py test
+    - name: Run Tests
+      run: python manage.py test
+      working-directory: greentree  # এখানে greentree আপনার প্রকল্পের মূল ফোল্ডার
