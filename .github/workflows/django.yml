@@ -26,4 +26,4 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: python manage.py test
-      working-directory: .github/workflows  # এখানে greentree আপনার প্রকল্পের মূল ফোল্ডার
+      working-directory: workflows  # এখানে greentree আপনার প্রকল্পের মূল ফোল্ডার
