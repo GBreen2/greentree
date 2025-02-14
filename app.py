@@ -56,7 +56,7 @@ def extract_video_id(url):
     return match.group(1) if match else None
 
 # Webhook endpoint for Vercel
-@app.post("https://greentree-hole-ncpt4plsj-rokon-khs-projects.vercel.app/webhook")
+@app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
