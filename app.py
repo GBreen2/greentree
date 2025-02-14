@@ -1,13 +1,14 @@
 import os
-import requests
-from fastapi import FastAPI, Request
 import re
+import httpx
+from fastapi import FastAPI, Request
 from telegram import Bot
+from telegram.error import TelegramError
 import uvicorn
 
 # YouTube API Key and Telegram Bot API Token as environment variables
-YOUTUBE_API_KEY = os.getenv('AIzaSyBLJlVmrVnTu4JYUwltLuqtji65EyxdP5s')
-TELEGRAM_BOT_TOKEN = os.getenv('7652906604:AAG4JGjSy0TTMkr0V0xlSxGMi7aQtJA_2io')
+YOUTUBE_API_KEY = os.getenv('AIzaSyBLJlVmrVnTu4JYUwltLuqtji65EyxdP5s')  # Ensure you set the correct environment variable
+TELEGRAM_BOT_TOKEN = os.getenv('7652906604:AAG4JGjSy0TTMkr0V0xlSxGMi7aQtJA_2io')  # Ensure you set the correct environment variable
 
 # FastAPI instance for Vercel to handle HTTP requests
 app = FastAPI()
@@ -19,8 +20,10 @@ async def get_youtube_video_info(video_url):
         return "Invalid YouTube URL! Please provide a valid URL.", None
 
     video_api_url = f'https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id={video_id}&key={YOUTUBE_API_KEY}'
-    response = requests.get(video_api_url)
-    data = response.json()
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(video_api_url)
+        data = response.json()
 
     if 'items' in data and len(data['items']) > 0:
         video = data['items'][0]
@@ -67,11 +70,15 @@ async def webhook(request: Request):
         video_url = data.get('message', {}).get('text')
         video_info, video_thumbnail = await get_youtube_video_info(video_url)
 
-        if video_thumbnail:
-            bot.send_message(chat_id=chat_id, text=video_info, parse_mode='Markdown')
-            bot.send_photo(chat_id=chat_id, photo=video_thumbnail)
-        else:
-            bot.send_message(chat_id=chat_id, text=video_info, parse_mode='Markdown')
+        try:
+            if video_thumbnail:
+                bot.send_message(chat_id=chat_id, text=video_info, parse_mode='Markdown')
+                bot.send_photo(chat_id=chat_id, photo=video_thumbnail)
+            else:
+                bot.send_message(chat_id=chat_id, text=video_info, parse_mode='Markdown')
+        except TelegramError as e:
+            print(f"Error while sending message: {e}")
+            return {"status": "error", "message": str(e)}
 
     return {"status": "ok"}
 
