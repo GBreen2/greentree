@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "api/like.php",
-      "use": "@vercel/python"
+      "use": "@vercel/php"
     }
   ]
 }
