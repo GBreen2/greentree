@@ -5,5 +5,11 @@
       "src": "api/api_request.php",
       "use": "@vercel/php"
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/api_request.php"
+    }
   ]
 }
