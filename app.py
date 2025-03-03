@@ -16,39 +16,38 @@ from functools import lru_cache
 app = Flask(__name__)
 
 # কনফিগারেশন
-TOKEN_FILES = {
-    "IND": "token_ind.json",
-    "BR": "token_br.json",
-    "US": "token_br.json",
-    "SAC": "token_br.json",
-    "NA": "token_br.json",
-    "default": "token_bd.json"
-}
-
-API_URLS = {
-    "IND": {
-        "like": "https://client.ind.freefiremobile.com/LikeProfile",
-        "info": "https://client.ind.freefiremobile.com/GetPlayerPersonalShow"
+CONFIG = {
+    "TOKEN_FILES": {
+        "IND": "token_ind.json",
+        "BR": "token_br.json",
+        "US": "token_br.json",
+        "SAC": "token_br.json",
+        "NA": "token_br.json",
+        "default": "token_bd.json"
     },
-    "BR": {
-        "like": "https://client.us.freefiremobile.com/LikeProfile",
-        "info": "https://client.us.freefiremobile.com/GetPlayerPersonalShow"
+    "API_URLS": {
+        "IND": {
+            "like": "https://client.ind.freefiremobile.com/LikeProfile",
+            "info": "https://client.ind.freefiremobile.com/GetPlayerPersonalShow"
+        },
+        "BR": {
+            "like": "https://client.us.freefiremobile.com/LikeProfile",
+            "info": "https://client.us.freefiremobile.com/GetPlayerPersonalShow"
+        },
+        "default": {
+            "like": "https://clientbp.ggblueshark.com/LikeProfile",
+            "info": "https://clientbp.ggblueshark.com/GetPlayerPersonalShow"
+        }
     },
-    "default": {
-        "like": "https://clientbp.ggblueshark.com/LikeProfile",
-        "info": "https://clientbp.ggblueshark.com/GetPlayerPersonalShow"
-    }
+    "ENCRYPTION_KEY": os.getenv("ENCRYPTION_KEY", "Yg&tc%DEuh6%Zc^8").encode(),
+    "ENCRYPTION_IV": os.getenv("ENCRYPTION_IV", "6oyZDr22E3ychjM%").encode()
 }
-
-# এনক্রিপশন কী এবং IV
-ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY", "Yg&tc%DEuh6%Zc^8").encode()
-ENCRYPTION_IV = os.getenv("ENCRYPTION_IV", "6oyZDr22E3ychjM%").encode()
 
 # টোকেন লোড করার ফাংশন (ক্যাশিং সহ)
 @lru_cache(maxsize=5)
 def load_tokens(server_name):
     try:
-        token_file = TOKEN_FILES.get(server_name, TOKEN_FILES["default"])
+        token_file = CONFIG["TOKEN_FILES"].get(server_name, CONFIG["TOKEN_FILES"]["default"])
         with open(token_file, "r") as f:
             return json.load(f)
     except Exception as e:
@@ -58,7 +57,7 @@ def load_tokens(server_name):
 # এনক্রিপশন ফাংশন
 def encrypt_message(plaintext):
     try:
-        cipher = AES.new(ENCRYPTION_KEY, AES.MODE_CBC, ENCRYPTION_IV)
+        cipher = AES.new(CONFIG["ENCRYPTION_KEY"], AES.MODE_CBC, CONFIG["ENCRYPTION_IV"])
         padded_message = pad(plaintext, AES.block_size)
         encrypted_message = cipher.encrypt(padded_message)
         return binascii.hexlify(encrypted_message).decode('utf-8')
@@ -159,7 +158,7 @@ def decode_protobuf(binary):
 # প্লেয়ার ইনফো রিকোয়েস্ট করার ফাংশন
 async def make_request(encrypted_uid, server_name, token):
     try:
-        url = API_URLS.get(server_name, API_URLS["default"])["info"]
+        url = CONFIG["API_URLS"].get(server_name, CONFIG["API_URLS"]["default"])["info"]
         edata = bytes.fromhex(encrypted_uid)
         headers = {
             'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_Z01QD Build/PI)",
@@ -209,7 +208,7 @@ async def handle_requests():
         app.logger.info(f"Likes before command: {before_like}")
 
         # লাইক রিকোয়েস্ট URL
-        url = API_URLS.get(server_name, API_URLS["default"])["like"]
+        url = CONFIG["API_URLS"].get(server_name, CONFIG["API_URLS"]["default"])["like"]
 
         # একাধিক লাইক রিকোয়েস্ট পাঠানো
         await send_multiple_requests(uid, server_name, url)
