@@ -30,13 +30,23 @@ def load_tokens(server_name):
         return None
 
 # Message এনক্রিপশন ফাংশন
-def encrypt_message(plaintext):
+def encrypt_message(uid):
     try:
-        key = b'Yg&tc%DEuh6%Zc^8'
-        iv = b'6oyZDr22E3ychjM%'
+        # Encrypted key and iv setup
+        key = b'Yg&tc%DEuh6%Zc^8'  # 16 bytes key
+        iv = b'6oyZDr22E3ychjM%'  # 16 bytes IV
+        
+        # Ensure that the UID is a string and then encode it to bytes
+        uid_bytes = str(uid).encode('utf-8')
+        
+        # Pad the message to make sure it's a multiple of AES block size (16 bytes)
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        padded_message = pad(plaintext, AES.block_size)
+        padded_message = pad(uid_bytes, AES.block_size)
+        
+        # Encrypt the padded message
         encrypted_message = cipher.encrypt(padded_message)
+        
+        # Return the encrypted message as a hex string
         return binascii.hexlify(encrypted_message).decode('utf-8')
     except Exception as e:
         app.logger.error(f"Error encrypting message: {e}")
@@ -132,6 +142,51 @@ def handle_requests():
     except Exception as e:
         app.logger.error(f"Error processing request: {e}")
         return jsonify({"error": str(e)}), 500
+
+# Player info রিকোয়েস্ট করার জন্য ফাংশন
+def make_request(encrypt, server_name, token):
+    try:
+        if server_name == "IND":
+            url = "https://client.ind.freefiremobile.com/GetPlayerPersonalShow"
+        elif server_name in {"BR", "US", "SAC", "NA"}:
+            url = "https://client.us.freefiremobile.com/GetPlayerPersonalShow"
+        else:
+            url = "https://clientbp.ggblueshark.com/GetPlayerPersonalShow"
+        edata = bytes.fromhex(encrypt)
+        headers = {
+            'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_Z01QD Build/PI)",
+            'Connection': "Keep-Alive",
+            'Accept-Encoding': "gzip",
+            'Authorization': f"Bearer {token}",
+            'Content-Type': "application/x-www-form-urlencoded",
+            'Expect': "100-continue",
+            'X-Unity-Version': "2018.4.11f1",
+            'X-GA': "v1 1",
+            'ReleaseVersion': "OB47"
+        }
+        response = requests.post(url, data=edata, headers=headers, verify=False)
+        hex_data = response.content.hex()
+        binary = bytes.fromhex(hex_data)
+        decode = decode_protobuf(binary)
+        if decode is None:
+            app.logger.error("Protobuf decoding returned None.")
+        return decode
+    except Exception as e:
+        app.logger.error(f"Error in make_request: {e}")
+        return None
+
+# Protobuf ডিকোড করার ফাংশন
+def decode_protobuf(binary):
+    try:
+        items = like_count_pb2.Info()
+        items.ParseFromString(binary)
+        return items
+    except DecodeError as e:
+        app.logger.error(f"Error decoding Protobuf data: {e}")
+        return None
+    except Exception as e:
+        app.logger.error(f"Unexpected error during protobuf decoding: {e}")
+        return None
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
