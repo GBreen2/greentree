@@ -14,7 +14,6 @@ from google.protobuf.message import DecodeError
 
 app = Flask(__name__)
 
-# Function to load tokens for different regions
 def load_tokens(server_name):
     try:
         if server_name == "IND":
@@ -31,7 +30,6 @@ def load_tokens(server_name):
         app.logger.error(f"Error loading tokens for server {server_name}: {e}")
         return None
 
-# Encrypt the message with AES encryption
 def encrypt_message(plaintext):
     try:
         key = b'Yg&tc%DEuh6%Zc^8'
@@ -44,7 +42,6 @@ def encrypt_message(plaintext):
         app.logger.error(f"Error encrypting message: {e}")
         return None
 
-# Create a protobuf message with UID and region
 def create_protobuf_message(user_id, region):
     try:
         message = like_pb2.like()
@@ -55,7 +52,6 @@ def create_protobuf_message(user_id, region):
         app.logger.error(f"Error creating protobuf message: {e}")
         return None
 
-# Function to send HTTP request using aiohttp
 async def send_request(encrypted_uid, token, url):
     try:
         edata = bytes.fromhex(encrypted_uid)
@@ -80,7 +76,6 @@ async def send_request(encrypted_uid, token, url):
         app.logger.error(f"Exception in send_request: {e}")
         return None
 
-# Function to handle multiple requests
 async def send_multiple_requests(uid, server_name, url):
     try:
         region = server_name
@@ -106,7 +101,6 @@ async def send_multiple_requests(uid, server_name, url):
         app.logger.error(f"Exception in send_multiple_requests: {e}")
         return None
 
-# Create UID Protobuf
 def create_protobuf(uid):
     try:
         message = uid_generator_pb2.uid_generator()
@@ -117,7 +111,6 @@ def create_protobuf(uid):
         app.logger.error(f"Error creating uid protobuf: {e}")
         return None
 
-# Encrypt the UID data
 def enc(uid):
     protobuf_data = create_protobuf(uid)
     if protobuf_data is None:
@@ -125,7 +118,6 @@ def enc(uid):
     encrypted_uid = encrypt_message(protobuf_data)
     return encrypted_uid
 
-# Make the main request
 def make_request(encrypt, server_name, token):
     try:
         if server_name == "IND":
@@ -148,6 +140,11 @@ def make_request(encrypt, server_name, token):
             'ReleaseVersion': "OB47"
         }
         response = requests.post(url, data=edata, headers=headers, verify=False)
+
+        if response.status_code != 200:
+            app.logger.error(f"Failed to retrieve data: {response.status_code}, Response: {response.text}")
+            return None
+
         hex_data = response.content.hex()
         binary = bytes.fromhex(hex_data)
         decode = decode_protobuf(binary)
@@ -158,7 +155,6 @@ def make_request(encrypt, server_name, token):
         app.logger.error(f"Error in make_request: {e}")
         return None
 
-# Decode protobuf data
 def decode_protobuf(binary):
     try:
         items = like_count_pb2.Info()
@@ -169,16 +165,6 @@ def decode_protobuf(binary):
         return None
     except Exception as e:
         app.logger.error(f"Unexpected error during protobuf decoding: {e}")
-        return None
-
-# Automatically refresh token when expired
-def refresh_token(server_name):
-    try:
-        # Implement token refresh logic here
-        # This is where you would get a new token, for now just a dummy response.
-        return "new_generated_token"
-    except Exception as e:
-        app.logger.error(f"Error refreshing token for server {server_name}: {e}")
         return None
 
 @app.route('/like', methods=['GET'])
@@ -194,13 +180,6 @@ def handle_requests():
             if tokens is None:
                 raise Exception("Failed to load tokens.")
             token = tokens[0]['token']
-            
-            # Check token validity, refresh if needed
-            if token == "expired_token":  # Replace this with actual token expiration check
-                app.logger.info("Token expired, refreshing token.")
-                token = refresh_token(server_name)
-                if not token:
-                    raise Exception("Failed to refresh token.")
             
             encrypted_uid = enc(uid)
             if encrypted_uid is None:
