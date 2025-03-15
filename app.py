@@ -126,7 +126,6 @@ def make_request(encrypt, server_name, token):
             url = "https://client.us.freefiremobile.com/GetPlayerPersonalShow"
         else:
             url = "https://clientbp.ggblueshark.com/GetPlayerPersonalShow"
-        
         edata = bytes.fromhex(encrypt)
         headers = {
             'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_Z01QD Build/PI)",
@@ -140,11 +139,6 @@ def make_request(encrypt, server_name, token):
             'ReleaseVersion': "OB47"
         }
         response = requests.post(url, data=edata, headers=headers, verify=False)
-
-        if response.status_code != 200:
-            app.logger.error(f"Failed to retrieve data: {response.status_code}, Response: {response.text}")
-            return None
-
         hex_data = response.content.hex()
         binary = bytes.fromhex(hex_data)
         decode = decode_protobuf(binary)
@@ -180,12 +174,11 @@ def handle_requests():
             if tokens is None:
                 raise Exception("Failed to load tokens.")
             token = tokens[0]['token']
-            
             encrypted_uid = enc(uid)
             if encrypted_uid is None:
                 raise Exception("Encryption of UID failed.")
 
-            # Retrieve player info before liking
+            # الحصول على بيانات اللاعب قبل تنفيذ عملية الإعجاب
             before = make_request(encrypted_uid, server_name, token)
             if before is None:
                 raise Exception("Failed to retrieve initial player info.")
@@ -201,7 +194,7 @@ def handle_requests():
                 before_like = 0
             app.logger.info(f"Likes before command: {before_like}")
 
-            # Set the like request URL based on the server
+            # تحديد رابط الإعجاب حسب اسم السيرفر
             if server_name == "IND":
                 url = "https://client.ind.freefiremobile.com/LikeProfile"
             elif server_name in {"BR", "US", "SAC", "NA"}:
@@ -209,10 +202,10 @@ def handle_requests():
             else:
                 url = "https://clientbp.ggblueshark.com/LikeProfile"
 
-            # Send like requests asynchronously
+            # إرسال الطلبات بشكل غير متزامن
             asyncio.run(send_multiple_requests(uid, server_name, url))
 
-            # Retrieve player info after liking
+            # الحصول على بيانات اللاعب بعد تنفيذ عملية الإعجاب
             after = make_request(encrypted_uid, server_name, token)
             if after is None:
                 raise Exception("Failed to retrieve player info after like requests.")
